@@ -42,7 +42,7 @@ struct Compartido {
 void mostrarCartas(const vector<Carta>& mano) {
     cout << "Tus cartas:" << endl;
     for (size_t i = 0; i < mano.size(); i++) {
-        cout << i + 1 << ": " << mano[i].color << " " << (mano[i].esEspecial ? mano[i].tipoEspecial : to_string(mano[i].numero)) << endl;
+        cout << i + 1 << ": " << (mano[i].esEspecial ? mano[i].tipoEspecial : to_string(mano[i].numero)) << " " <<  mano[i].color<< endl;
     }
 }
 
@@ -100,9 +100,6 @@ void repartirCartas(vector<Carta>& mazo, Jugador jugadores[], int numJugadores) 
 void pushCarta(PilaCompartida* pila, Carta carta) {
     if (pila->tope < 107) {
         pila->pila[++(pila->tope)] = carta;
-    } else {
-        
-        cerr << "Error: Pila de descartes llena." << endl;
     }
 }
 
@@ -127,10 +124,11 @@ void jugarTurnoHumano(Jugador& jugador, PilaCompartida* pilaDescarte, vector<Car
         << (cartaActual.esEspecial ? cartaActual.tipoEspecial : to_string(cartaActual.numero)) << endl;
 
     bool jugada = false;
-    if (cartaActual.tipoEspecial == "salta") {
+    if (strcmp(cartaActual.tipoEspecial, "salta") == 0) {
         jugada = true;
         cout << "El jugador anterior ocupó una carta 'Salta', perdiste tu turno." << endl;
-    } else if (cartaActual.tipoEspecial == "+2" || cartaActual.tipoEspecial == "+4") {
+    } else if (strcmp(cartaActual.tipoEspecial, "+2") == 0 || strcmp(cartaActual.tipoEspecial, "+4") == 0)
+ {
         jugada = true;
         int cont = 0;
 
@@ -149,7 +147,7 @@ void jugarTurnoHumano(Jugador& jugador, PilaCompartida* pilaDescarte, vector<Car
         }
 
         // Si es +4, robar dos cartas más
-        if (cartaActual.tipoEspecial == "+4") {
+        if (strcmp(cartaActual.tipoEspecial, "+4") == 0) {
             if (!mazo.empty()) {
                 Carta cartaRobada = mazo.back();
                 mazo.pop_back();
@@ -183,7 +181,7 @@ void jugarTurnoHumano(Jugador& jugador, PilaCompartida* pilaDescarte, vector<Car
                 cout << "Has robado: " << cartaRobada.color << " " 
                      << (cartaRobada.esEspecial ? cartaRobada.tipoEspecial : to_string(cartaRobada.numero)) << endl;
                 
-                if (cartaRobada.color == cartaActual.color || (cartaRobada.numero == cartaActual.numero && cartaRobada.esEspecial != true) || (cartaRobada.esEspecial == true && cartaRobada.tipoEspecial == cartaActual.tipoEspecial)){
+                if (strcmp(cartaRobada.color, cartaActual.color) == 0 || (cartaRobada.numero == cartaActual.numero && !cartaRobada.esEspecial) || (cartaRobada.esEspecial && strcmp(cartaRobada.tipoEspecial, cartaActual.tipoEspecial) == 0)){
                     pushCarta(pilaDescarte, cartaRobada);
                     cout << "Has jugado la carta robada." << endl;
                     jugada = true;
@@ -195,22 +193,24 @@ void jugarTurnoHumano(Jugador& jugador, PilaCompartida* pilaDescarte, vector<Car
             }
         } else if (opcion > 0 && opcion <= jugador.mano.size()) {
             Carta cartaElegida = jugador.mano[opcion - 1];
-            if (cartaElegida.color == cartaActual.color || (cartaElegida.numero == cartaActual.numero && cartaElegida.esEspecial != true) || (cartaElegida.esEspecial == true && cartaElegida.tipoEspecial == cartaActual.tipoEspecial)) {
+            if (strcmp(cartaElegida.color, cartaActual.color) == 0 || (cartaElegida.numero == cartaActual.numero && !cartaElegida.esEspecial) || (cartaElegida.esEspecial && strcmp(cartaElegida.tipoEspecial, cartaActual.tipoEspecial) == 0)) {
                 pushCarta(pilaDescarte, cartaElegida);
                 jugador.mano.erase(jugador.mano.begin() + opcion - 1);
                 cout << "Has jugado: " << cartaElegida.color << " " 
                      << (cartaElegida.esEspecial ? cartaElegida.tipoEspecial : to_string(cartaElegida.numero)) << endl;
                 jugada = true;
-            } else if (cartaElegida.tipoEspecial == "comodin" || cartaElegida.tipoEspecial == "+4") {
+            } else if (strcmp(cartaElegida.tipoEspecial, "comodin") == 0 || strcmp(cartaElegida.tipoEspecial, "+4") == 0) {
                 string input_color;
+                cout << endl;
                 cout << "Elige el nuevo color: ";
                 cin >> input_color;
                 cout << endl;
-                while (input_color != "rojo" || input_color != "verde" || input_color != "amarillo" || input_color != "azul"){
-                    cout << "Ingrese una opción válida:"; 
+                while (input_color != "rojo" && input_color != "verde" && input_color != "amarillo" && input_color != "azul") {
+                    cout << "Ingrese una opción válida: "; 
                     cin >> input_color;
                     cout << endl;
                 }
+
                 strncpy(cartaElegida.color, input_color.c_str(), sizeof(cartaElegida.color) - 1);
                 cartaElegida.color[sizeof(cartaElegida.color) - 1] = '\0'; // Asegurar el terminador nulo
 
@@ -258,10 +258,10 @@ void jugarTurnoBot(int jugadorId, Jugador jugadores[], PilaCompartida* pilaDesca
     bool jugada = false;
     bool saltar_turno = false;
 
-    if (cartaActual.tipoEspecial == "salta") {
+    if (strcmp(cartaActual.tipoEspecial, "salta") == 0) {
         jugada = true;
         saltar_turno = true;
-    } else if (cartaActual.tipoEspecial == "+2" || cartaActual.tipoEspecial == "+4") {
+    } else if (strcmp(cartaActual.tipoEspecial, "+2") == 0 || strcmp(cartaActual.tipoEspecial, "+4") == 0) {
         jugada = true;
         saltar_turno = true;
 
@@ -278,7 +278,7 @@ void jugarTurnoBot(int jugadorId, Jugador jugadores[], PilaCompartida* pilaDesca
         }
 
         // Si es +4, robar dos cartas más
-        if (cartaActual.tipoEspecial == "+4") {
+        if (strcmp(cartaActual.tipoEspecial, "+4") == 0) {
             if (!mazo.empty()) {
                 Carta cartaRobada = mazo.back();
                 mazo.pop_back();
@@ -295,13 +295,13 @@ void jugarTurnoBot(int jugadorId, Jugador jugadores[], PilaCompartida* pilaDesca
     // Si hay que saltar turno, intentar jugar una carta
     if (saltar_turno != true){
         for (size_t i = 0; i < jugadores[jugadorId].mano.size(); i++) {
-            if (jugadores[jugadorId].mano[i].color == cartaActual.color || (jugadores[jugadorId].mano[i].numero == cartaActual.numero && jugadores[jugadorId].mano[i].esEspecial != true) || (jugadores[jugadorId].mano[i].esEspecial == true && jugadores[jugadorId].mano[i].tipoEspecial == cartaActual.tipoEspecial)) {
+            if (strcmp(jugadores[jugadorId].mano[i].color, cartaActual.color) == 0 || (jugadores[jugadorId].mano[i].numero == cartaActual.numero && !jugadores[jugadorId].mano[i].esEspecial) || (jugadores[jugadorId].mano[i].esEspecial && strcmp(jugadores[jugadorId].mano[i].tipoEspecial, cartaActual.tipoEspecial) == 0)) {
                 pushCarta(pilaDescarte, jugadores[jugadorId].mano[i]);
                 jugadores[jugadorId].mano.erase(jugadores[jugadorId].mano.begin() + i);
                 jugada = true;
                 cout << "Jugador " << jugadorId + 1 << " (Bot) ha jugado una carta." << endl;
                 break;
-            } else if (jugadores[jugadorId].mano[i].tipoEspecial == "comodin" || jugadores[jugadorId].mano[i].tipoEspecial == "+4") {
+            } else if (strcmp(jugadores[jugadorId].mano[i].tipoEspecial, "comodin") == 0 || strcmp(jugadores[jugadorId].mano[i].tipoEspecial, "+4") == 0) {
                 int int_color = rand() % 4;
                 string colores[] = {"rojo", "amarillo", "verde", "azul"};
                 strncpy(jugadores[jugadorId].mano[i].color, colores[int_color].c_str(), sizeof(jugadores[jugadorId].mano[i].color) - 1);
@@ -318,9 +318,7 @@ void jugarTurnoBot(int jugadorId, Jugador jugadores[], PilaCompartida* pilaDesca
     // Intentar jugar una carta si no se ha saltado el turno
     for (size_t i = 0; i < jugadores[jugadorId].mano.size(); i++) {
         cartaActual = topCarta(pilaDescarte);  // Obtener la carta actual desde la pila de memoria compartida
-        if (jugadores[jugadorId].mano[i].color == cartaActual.color || 
-            jugadores[jugadorId].mano[i].numero == cartaActual.numero || 
-            jugadores[jugadorId].mano[i].esEspecial) {
+        if (strcmp(jugadores[jugadorId].mano[i].color, cartaActual.color) == 0 || jugadores[jugadorId].mano[i].numero == cartaActual.numero || jugadores[jugadorId].mano[i].esEspecial) {
 
             pushCarta(pilaDescarte, jugadores[jugadorId].mano[i]);  // Actualizar la pila de descartes en memoria compartida
             jugadores[jugadorId].mano.erase(jugadores[jugadorId].mano.begin() + i);
@@ -335,7 +333,7 @@ void jugarTurnoBot(int jugadorId, Jugador jugadores[], PilaCompartida* pilaDesca
         if (!mazo.empty()) {
             Carta cartaRobada = mazo.back();
             mazo.pop_back();
-            if (cartaRobada.color == cartaActual.color || (cartaRobada.numero == cartaActual.numero && cartaRobada.esEspecial != true) || (cartaRobada.esEspecial == true && cartaRobada.tipoEspecial == cartaActual.tipoEspecial)) {
+            if (strcmp(cartaRobada.color, cartaActual.color) == 0 || (cartaRobada.numero == cartaActual.numero && !cartaRobada.esEspecial) || (cartaRobada.esEspecial && strcmp(cartaRobada.tipoEspecial, cartaActual.tipoEspecial) == 0)) {
                 pushCarta(pilaDescarte, cartaRobada);
                 cout << "Jugador " << jugadorId + 1 << " (Bot) ha jugado la carta robada." << endl;
             } else {
