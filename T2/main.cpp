@@ -2,43 +2,43 @@
 #include <vector>
 #include <stack>
 #include <cctype>
-#include <unistd.h>  // Para fork()
-#include <sys/ipc.h> // Para memoria compartida
+#include <unistd.h>  // fork()
+#include <sys/ipc.h> // memoria compartida
 #include <sys/shm.h>
-#include <ctime>     // Para generar aleatoriedad
-#include <cstdlib>   // Para srand y rand
-#include <wait.h>    // Para wait()
-#include <semaphore.h> // Para semáforos
-#include <atomic>    // Para control de finalización del juego
+#include <ctime>     // cartas aleatorias
+#include <cstdlib>   // srand y rand
+#include <wait.h>    // wait()
+#include <semaphore.h> // semáforos
+#include <atomic>    // control de finalización del juego
 #include <cstring>
 
 using namespace std;
 
 struct Carta {
     int numero;
-    char color[10]; // Usamos un array de caracteres en lugar de std::string
+    char color[10]; // array de caracteres para el color
     bool esEspecial;
-    char tipoEspecial[10]; // También para el tipo especial
+    char tipoEspecial[10]; // array de caracteres para el tipo especial
 };
 
 struct Jugador {
     vector<Carta> mano;
 };
 
-// Estructura para la pila de descartes compartida
+// struct para la pila de descartes 
 struct PilaCompartida {
-    Carta pila[108];  // Máximo de 108 cartas en la pila
-    int tope;         // Índice que apunta al tope de la pila
+    Carta pila[108];  // máximo de 108 cartas en la pila
+    int tope;         // indice que apunta al tope de la pila
 };
 
-// Variables globales para la sincronización y finalización del juego
-sem_t semaforoTurno;   // Semáforo para controlar los turnos
+// variables globales para la sincronización y finalización del juego
+sem_t semaforoTurno;   // semáforo que controla los turnos
 
 struct Compartido {
-    int turnoActual;
-    bool sentido_positivo;
-    int cartas_acumuladas;
-    bool juegoTerminado;  // Variable compartida para indicar el turno actual
+    int turnoActual;    // variable compartida para indicar el turno actual
+    bool sentido_positivo; // variable compartida para indicar el sentido del juego
+    int cartas_acumuladas; // variable compartida para indicar la cantidad de cartas acumuladas
+    bool juegoTerminado;  // variable compartida para indicar si el juego ha terminado
 };
 
 void mostrarCartas(const vector<Carta>& mano) {
@@ -55,7 +55,7 @@ void inicializarMazo(vector<Carta>& mazo) {
             Carta carta = {num, "", false, ""};
             strncpy(carta.color, color, sizeof(carta.color) - 1);
             mazo.push_back(carta);
-            if (num != 0) mazo.push_back(carta);  // El 0 no se repite
+            if (num != 0) mazo.push_back(carta);  // el 0 no se repite
         }
     }
 
@@ -101,13 +101,13 @@ void repartirCartas(vector<Carta>& mazo, Jugador jugadores[], int numJugadores) 
 
 void pushCarta(PilaCompartida* pila, Carta carta) {
     if (pila->tope < 107) {
-        pila->pila[++(pila->tope)] = carta;
+        pila->pila[++(pila->tope)] = carta; // incrementar el tope y luego asignar la carta a pone en la pila
     }
 }
 
 Carta topCarta(PilaCompartida* pila) {
     if (pila->tope >= 0) {
-        return pila->pila[pila->tope];
+        return pila->pila[pila->tope];  // retornar la carta en el tope de la pila
     } else {
         cerr << "Error: Pila de descartes vacía." << endl;
         exit(1); // O maneja el error de otra manera
@@ -131,7 +131,7 @@ void añadircartasacumuladas(Compartido* turno, int cant_cartas){
 }
 void jugarTurnoHumano(Jugador& jugador, PilaCompartida* pilaDescarte, vector<Carta>& mazo, Compartido* turnoCompartido, int miTurno) {
     while (turnoCompartido->turnoActual != miTurno) {
-        // Esperar a que sea el turno del jugador humano
+        // esperar a que sea el turno del jugador humano
         sleep(1);
     }
     if (turnoCompartido->juegoTerminado == true){
@@ -143,8 +143,8 @@ void jugarTurnoHumano(Jugador& jugador, PilaCompartida* pilaDescarte, vector<Car
         }
         return;
     }
-    // Turno del jugador humano
-    Carta cartaActual = topCarta(pilaDescarte);  // Obtener la carta en la cima de la pila desde la memoria compartida
+    // turno del jugador humano
+    Carta cartaActual = topCarta(pilaDescarte);  // obtiene la carta que esta arriba en la pila de descartes
     cout << "Carta en la pila de descarte: " << cartaActual.color << " " 
         << (cartaActual.esEspecial ? cartaActual.tipoEspecial : to_string(cartaActual.numero)) << endl;
 
@@ -200,7 +200,7 @@ void jugarTurnoHumano(Jugador& jugador, PilaCompartida* pilaDescarte, vector<Car
                                     }
 
                                     strncpy(cartaElegida.color, input_color.c_str(), sizeof(cartaElegida.color) - 1);
-                                    cartaElegida.color[sizeof(cartaElegida.color) - 1] = '\0'; // Asegurar el terminador nulo
+                                    cartaElegida.color[sizeof(cartaElegida.color) - 1] = '\0'; // asegurar el terminador nulo
                                     añadircartasacumuladas(turnoCompartido, 4);
                                 }
                                 pushCarta(pilaDescarte, cartaElegida);
@@ -241,7 +241,7 @@ void jugarTurnoHumano(Jugador& jugador, PilaCompartida* pilaDescarte, vector<Car
         }
     }
 
-    // Mostrar las cartas del jugador después de robar
+    // mostrar las cartas del jugador después de robar
     if (respondido == false){
         mostrarCartas(jugador.mano);
     }
@@ -302,7 +302,7 @@ void jugarTurnoHumano(Jugador& jugador, PilaCompartida* pilaDescarte, vector<Car
                 pushCarta(pilaDescarte, cartaElegida);
                 jugador.mano.erase(jugador.mano.begin() + opcion - 1);
                 cout << "Has jugado: " << cartaElegida.color << " " 
-                     << (cartaElegida.esEspecial ? cartaElegida.tipoEspecial : to_string(cartaElegida.numero)) << endl;
+                << (cartaElegida.esEspecial ? cartaElegida.tipoEspecial : to_string(cartaElegida.numero)) << endl;
                 jugada = true;
             } else if (strcmp(cartaElegida.tipoEspecial, "comodin") == 0 || strcmp(cartaElegida.tipoEspecial, "+4") == 0) {
                 if (strcmp(cartaElegida.tipoEspecial, "+4") == 0){
@@ -325,7 +325,7 @@ void jugarTurnoHumano(Jugador& jugador, PilaCompartida* pilaDescarte, vector<Car
                 pushCarta(pilaDescarte, cartaElegida);
                 jugador.mano.erase(jugador.mano.begin() + opcion - 1);
                 cout << "Has jugado: " << cartaElegida.color << " " 
-                     << (cartaElegida.esEspecial ? cartaElegida.tipoEspecial : to_string(cartaElegida.numero)) << endl;
+                << (cartaElegida.esEspecial ? cartaElegida.tipoEspecial : to_string(cartaElegida.numero)) << endl;
                 jugada = true;
             } else {
                 cout << "No puedes jugar esa carta." << endl;
@@ -335,13 +335,13 @@ void jugarTurnoHumano(Jugador& jugador, PilaCompartida* pilaDescarte, vector<Car
         }
     }
 
-    // Verificar si el jugador ha ganado
+    // verificar si el jugador ha ganado
     if (jugador.mano.empty()) {
         cout << "¡Has ganado!" << endl;
-        turnoCompartido->juegoTerminado = true;  // Finalizar el juego
+        turnoCompartido->juegoTerminado = true;  // finalizar el juego
     }
 
-    // Cambiar el turno al siguiente jugador
+    // cambiar el turno al siguiente jugador
     if (turnoCompartido->sentido_positivo == true){
         turnoCompartido->turnoActual = (turnoCompartido->turnoActual + 1) % 4;
     } else {
@@ -353,16 +353,16 @@ void jugarTurnoHumano(Jugador& jugador, PilaCompartida* pilaDescarte, vector<Car
     }
 
 
-    sem_post(&semaforoTurno);  // Liberar semáforo para los bots
+    sem_post(&semaforoTurno);  // liberar semáforo para los bots
 }
 
 void jugarTurnoBot(int jugadorId, Jugador jugadores[], PilaCompartida* pilaDescarte, vector<Carta>& mazo, Compartido* turnoCompartido, int miTurno) {
     while (turnoCompartido->turnoActual != miTurno) {
-        // Esperar a que sea el turno del bot
+        // esperar a que sea el turno del bot
         sleep(1);
     }
 
-    // Esperar a que el jugador anterior (humano o bot) termine su jugada
+    // esperar a que el jugador anterior (humano o bot) termine su jugada
     sem_wait(&semaforoTurno);
 
     if (turnoCompartido->juegoTerminado == true){
@@ -375,8 +375,8 @@ void jugarTurnoBot(int jugadorId, Jugador jugadores[], PilaCompartida* pilaDesca
         return;
     }
 
-    // Turno del bot
-    Carta cartaActual = topCarta(pilaDescarte);  // Obtener la carta en la cima de la pila desde la memoria compartida
+    // turno del bot
+    Carta cartaActual = topCarta(pilaDescarte);  // obtiene la carta que esta arriba en la pila de descartes
     bool jugada = false;
     bool saltar_turno = false;
     if (strcmp(cartaActual.tipoEspecial, "salta") == 0) {
@@ -425,7 +425,7 @@ void jugarTurnoBot(int jugadorId, Jugador jugadores[], PilaCompartida* pilaDesca
         }
     }
 
-    // Si hay que saltar turno, intentar jugar una carta
+    // si hay que saltar turno, intentar jugar una carta
     if (saltar_turno != true){
         for (size_t i = 0; i < jugadores[jugadorId].mano.size(); i++) {
             if (strcmp(jugadores[jugadorId].mano[i].color, cartaActual.color) == 0 || (jugadores[jugadorId].mano[i].numero == cartaActual.numero && !jugadores[jugadorId].mano[i].esEspecial) || (jugadores[jugadorId].mano[i].esEspecial && strcmp(jugadores[jugadorId].mano[i].tipoEspecial, cartaActual.tipoEspecial) == 0) || (jugadores[jugadorId].mano[i].tipoEspecial[0] == '+' && cartaActual.tipoEspecial[0] == '+') || (strcmp(jugadores[jugadorId].mano[i].tipoEspecial, "salta") == 0 && strcmp(cartaActual.tipoEspecial, "salta (U)") == 0)) {
@@ -468,7 +468,7 @@ void jugarTurnoBot(int jugadorId, Jugador jugadores[], PilaCompartida* pilaDesca
                     int int_color = rand() % 4;
                     string colores[] = {"rojo", "amarillo", "verde", "azul"};
                     strncpy(cartaRobada.color, colores[int_color].c_str(), sizeof(cartaRobada.color) - 1);
-                    cartaRobada.color[sizeof(cartaRobada.color) - 1] = '\0';  // Asegurar el terminador nulo
+                    cartaRobada.color[sizeof(cartaRobada.color) - 1] = '\0';  // asegurar el terminador nulo
                 } else if (strcmp(cartaRobada.tipoEspecial, "+2") == 0) {
                     añadircartasacumuladas(turnoCompartido, 2);
                 } else if (strcmp(cartaRobada.tipoEspecial, "cambio") == 0){
@@ -485,13 +485,13 @@ void jugarTurnoBot(int jugadorId, Jugador jugadores[], PilaCompartida* pilaDesca
         }
     }
 
-    // Verificar si el bot ha ganado
+    // verificar si el bot ha ganado
     if (jugadores[jugadorId].mano.empty()) {
         cout << "¡Jugador " << jugadorId + 1 << " (Bot) ha ganado!" << endl;
-        turnoCompartido->juegoTerminado = true;  // Finalizar el juego
+        turnoCompartido->juegoTerminado = true;  // finalizar el juego
     }
 
-    // Cambiar el turno al siguiente jugador
+    // cambiar el turno al siguiente jugador
     if (turnoCompartido->sentido_positivo == true){
         turnoCompartido->turnoActual = (turnoCompartido->turnoActual + 1) % 4;
     } else {
@@ -503,11 +503,12 @@ void jugarTurnoBot(int jugadorId, Jugador jugadores[], PilaCompartida* pilaDesca
     }
 
 
-    sem_post(&semaforoTurno);  // Liberar el semáforo para el siguiente jugador
+    sem_post(&semaforoTurno);  // liberar el semáforo para el siguiente jugador
 }
 
 int main() {
-    // Crear memoria compartida para el control de turnos y la pila de descartes
+
+    // crear memoria compartida para el control de turnos y la pila de descartes
     key_t key1 = ftok("shmfile", 65);
     if (key1 == -1) {
         cerr << "Error al generar la clave 1." << endl;
@@ -527,7 +528,7 @@ int main() {
     }
     turnoCompartido->turnoActual = 0;
     turnoCompartido->sentido_positivo = true;
-    turnoCompartido->cartas_acumuladas = 0;  // El jugador 0 (humano) empieza
+    turnoCompartido->cartas_acumuladas = 0;  // el jugador 0 (humano) empieza
     turnoCompartido->juegoTerminado = false;
 
     key_t key2 = ftok("shmfile2", 66); 
@@ -551,11 +552,9 @@ int main() {
     
     memset(pilaDescarte, 0, sizeof(PilaCompartida));
 
-    pilaDescarte->tope = -1; // Inicializar la pila vacía
-    // Inicializar variables del juego
+    pilaDescarte->tope = -1; // inicializar la pila de descartes, el mazo, y los jugadores
     Jugador jugadores[4];
     vector<Carta> mazo;
-    // Inicializar y barajar el mazo
     inicializarMazo(mazo);
     barajarMazo(mazo);
     repartirCartas(mazo, jugadores, 4);
@@ -572,38 +571,38 @@ int main() {
     } else if (strcmp(cartaActual.tipoEspecial, "+4") == 0){
         añadircartasacumuladas(turnoCompartido, 4);
     }
-    // Inicializar el semáforo
-    sem_init(&semaforoTurno, 1, 1);  // El semáforo empieza en 1
+    // inicializar el semáforo
+    sem_init(&semaforoTurno, 1, 1);  // semaforo en 1 para que juegue el jugador humano
 
     pid_t pid;
     for (int i = 0; i < 4; i++) {
         pid = fork();
-        if (pid == 0) {  // Proceso hijo
-            if (i == 0) {  // El jugador humano es el proceso hijo 0
+        if (pid == 0) {  // proceso hijo
+            if (i == 0) {  // el jugador humano es el proceso hijo 0
                 while (!turnoCompartido->juegoTerminado) {
                     jugarTurnoHumano(jugadores[0], pilaDescarte, mazo, turnoCompartido, 0);
                 }
-                exit(0);  // Salir del proceso cuando el juego termine
-            } else {  // Los otros 3 son bots
+                exit(0);  // cuando alguien gana, el proceso hijo termina
+            } else {  // los otros 3 son bots
                 while (!turnoCompartido->juegoTerminado) {
                     jugarTurnoBot(i, jugadores, pilaDescarte, mazo, turnoCompartido, i);
                 }
-                exit(0);  // Salir del proceso cuando el juego termine
+                exit(0);  // cuando alguien gana, el proceso hijo termina
             }
         }
     }
 
-    // El proceso padre solo espera a que los hijos terminen
+    // esperar a que terminen los procesos hijos
     for (int i = 0; i < 4; i++) {
         wait(NULL);
     }
 
-    // Liberar recursos
+    // liberar recursos
     shmdt(turnoCompartido);
     shmctl(shmId1, IPC_RMID, NULL);
     shmdt(pilaDescarte);
     shmctl(shmId2, IPC_RMID, NULL);
-    sem_destroy(&semaforoTurno);  // Destruir el semáforo
+    sem_destroy(&semaforoTurno);  // liberar el semáforo
 
     return 0;
 }
