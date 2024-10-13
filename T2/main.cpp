@@ -256,7 +256,7 @@ void jugarTurnoHumano(Jugador& jugador, PilaCompartida* pilaDescarte, vector<Car
                 Carta cartaRobada = mazo.back();
                 mazo.pop_back();
                 cout << "Has robado: " << cartaRobada.color << " " 
-                     << (cartaRobada.esEspecial ? cartaRobada.tipoEspecial : to_string(cartaRobada.numero)) << endl;
+                << (cartaRobada.esEspecial ? cartaRobada.tipoEspecial : to_string(cartaRobada.numero)) << endl;
                 
                 if (strcmp(cartaRobada.color, cartaActual.color) == 0 || (cartaRobada.numero == cartaActual.numero && !cartaRobada.esEspecial) || (cartaRobada.esEspecial && strcmp(cartaRobada.tipoEspecial, cartaActual.tipoEspecial) == 0) || (cartaRobada.tipoEspecial[0] == '+') && (cartaActual.tipoEspecial[0] == '+') || (strcmp(cartaRobada.tipoEspecial, "salta") == 0 && strcmp(cartaActual.tipoEspecial, "salta (U)") == 0)){
                     if (strcmp(cartaRobada.tipoEspecial, "cambio") == 0){
@@ -508,9 +508,9 @@ void jugarTurnoBot(int jugadorId, Jugador jugadores[], PilaCompartida* pilaDesca
 
 int main() {
     // Crear memoria compartida para el control de turnos y la pila de descartes
-    key_t key1 = ftok("shmfile.txt", 65);
+    key_t key1 = ftok("shmfile", 65);
     if (key1 == -1) {
-        cerr << "Error al generar la clave." << endl;
+        cerr << "Error al generar la clave 1." << endl;
         exit(1);
     }
 
@@ -530,7 +530,7 @@ int main() {
     turnoCompartido->cartas_acumuladas = 0;  // El jugador 0 (humano) empieza
     turnoCompartido->juegoTerminado = false;
 
-    key_t key2 = ftok("shmfile2.txt", 66); 
+    key_t key2 = ftok("shmfile2", 66); 
     if (key2 == -1) {
         cerr << "Error al generar la clave: " << strerror(errno) << endl;
         return 1;
@@ -559,7 +559,11 @@ int main() {
     inicializarMazo(mazo);
     barajarMazo(mazo);
     repartirCartas(mazo, jugadores, 4);
-
+    if (mazo.back().esEspecial){
+        while (mazo.back().esEspecial){
+            barajarMazo(mazo);
+        }
+    }
     pushCarta(pilaDescarte, mazo.back());
     mazo.pop_back();
     Carta cartaActual = topCarta(pilaDescarte);
