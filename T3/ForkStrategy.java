@@ -1,20 +1,22 @@
-import java.io.IOException;
+import java.io.*;
 
 public class ForkStrategy {
     public static char buscarConFork(Matriz matriz) throws IOException {
-        // Simulación del fork: Proceso hijo que realiza la búsqueda
-        ProcessBuilder pb = new ProcessBuilder("java", "ProcesoFork");
-        Process proceso = pb.start();
+        ProcessBuilder pb = new ProcessBuilder("java", "ProcesoFork", 
+                                                matriz.getNombreArchivo(), 
+                                                "0", String.valueOf(matriz.getFilas()), 
+                                                "0", String.valueOf(matriz.getColumnas()));
+        Process process = pb.start();
 
-        // Esperar la finalización del proceso (opcionalmente leer la salida)
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String resultado = reader.readLine();
+
         try {
-            proceso.waitFor();
+            process.waitFor();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        // Supongamos que la letra encontrada se imprime en la salida estándar
-        // Puedes leer esa letra de la salida del proceso si es necesario.
-        return 'A';  // Ejemplo, ajustar según tu implementación.
+        return resultado != null ? resultado.charAt(0) : ' ';
     }
 }

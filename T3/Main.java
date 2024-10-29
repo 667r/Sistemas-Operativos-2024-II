@@ -4,13 +4,7 @@ import java.util.*;
 public class Main {
     public static void main(String[] args) {
         String rutaBase = "./archivos_prueba";  // Ruta relativa al directorio base
-        Map<String, List<Character>> resultadosPorCaso = new TreeMap<>(new Comparator<String>() {
-            @Override
-            public int compare(String caso1, String caso2) {
-                return extraerNumero(caso1) - extraerNumero(caso2);  // Ordenar numéricamente
-            }
-        });
-
+        Map<String, List<Character>> resultadosPorCaso = new TreeMap<>(Comparator.comparingInt(Main::extraerNumero));
         long tiempoTotalInicio = System.currentTimeMillis();
 
         List<File> archivos = ArchivoUtil.listarArchivos(rutaBase);
@@ -19,20 +13,19 @@ public class Main {
             return;
         }
 
-        // Procesar cada archivo y agrupar las letras por caso
+        // Procesar cada archivo con ambas estrategias y medir tiempos
         for (File archivo : archivos) {
             try {
                 String nombreCaso = archivo.getParentFile().getName();  // Obtener el nombre del caso
                 Matriz matriz = new Matriz(archivo.getPath());
 
-                long inicio = System.currentTimeMillis();
-                char letra = buscarLetraOculta(matriz);
-                long fin = System.currentTimeMillis();
+                // Comparación entre ThreadStrategy y ForkStrategy
+                char letraThread = ejecutarThreadStrategy(matriz);
+                char letraFork = ejecutarForkStrategy(matriz);
 
-                // Guardar la letra en la lista correspondiente al caso
-                resultadosPorCaso.computeIfAbsent(nombreCaso, k -> new ArrayList<>()).add(letra);
+                // Guardar la letra encontrada por ThreadStrategy (puede elegir cualquier estrategia)
+                resultadosPorCaso.computeIfAbsent(nombreCaso, k -> new ArrayList<>()).add(letraThread);
 
-                System.out.println(letra + "\nTiempo: " + (fin - inicio) + " ms\n");
             } catch (Exception e) {
                 System.out.println("Error procesando el archivo: " + archivo.getName());
                 e.printStackTrace();
@@ -42,7 +35,7 @@ public class Main {
         long tiempoTotalFin = System.currentTimeMillis();
         System.out.println("\n===== Mensaje Final por Caso =====\n");
 
-        // Imprimir el mensaje de cada caso en orden
+        // Imprimir el mensaje final por caso
         for (Map.Entry<String, List<Character>> entry : resultadosPorCaso.entrySet()) {
             String nombreCaso = entry.getKey();
             String mensaje = construirMensaje(entry.getValue());
@@ -52,16 +45,31 @@ public class Main {
         System.out.println("\nTiempo total: " + (tiempoTotalFin - tiempoTotalInicio) + " ms");
     }
 
-    // Método para buscar la letra oculta en la matriz
-    public static char buscarLetraOculta(Matriz matriz) {
-        for (int i = 0; i < matriz.getFilas(); i++) {
-            for (int j = 0; j < matriz.getColumnas(); j++) {
-                if (matriz.getElemento(i, j) != '0') {
-                    return matriz.getElemento(i, j);  // Letra encontrada
-                }
-            }
+    // Método para ejecutar la estrategia con Threads y medir su tiempo
+    private static char ejecutarThreadStrategy(Matriz matriz) throws InterruptedException {
+        ThreadStrategy thread = new ThreadStrategy(matriz, 0, matriz.getFilas(), 0, matriz.getColumnas());
+        long inicio = System.currentTimeMillis();
+        thread.start();
+        thread.join();  // Esperar a que el hilo termine
+        long fin = System.currentTimeMillis();
+
+        System.out.println("ThreadStrategy - Letra: " + thread.getResultado() + " | Tiempo: " + (fin - inicio) + " ms");
+        return thread.getResultado();
+    }
+
+    // Método para ejecutar la estrategia con Forks y medir su tiempo
+    private static char ejecutarForkStrategy(Matriz matriz) {
+        try {
+            long inicio = System.currentTimeMillis();
+            char letra = ForkStrategy.buscarConFork(matriz);
+            long fin = System.currentTimeMillis();
+
+            System.out.println("ForkStrategy - Letra: " + letra + " | Tiempo: " + (fin - inicio) + " ms");
+            return letra;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ' ';
         }
-        return ' ';  // Caso borde: no se encuentra letra
     }
 
     // Construir el mensaje final con las letras en orden
