@@ -1,22 +1,10 @@
-import java.io.*;
+import java.util.concurrent.ForkJoinPool;
 
 public class ForkStrategy {
-    public static char buscarConFork(Matriz matriz) throws IOException {
-        ProcessBuilder pb = new ProcessBuilder("java", "ProcesoFork", 
-                                                matriz.getNombreArchivo(), 
-                                                "0", String.valueOf(matriz.getFilas()), 
-                                                "0", String.valueOf(matriz.getColumnas()));
-        Process process = pb.start();
+    private static final ForkJoinPool pool = new ForkJoinPool();
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        String resultado = reader.readLine();
-
-        try {
-            process.waitFor();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        return resultado != null ? resultado.charAt(0) : ' ';
+    public static char buscarConFork(Matriz matriz) {
+        ForkJoinStrategy task = new ForkJoinStrategy(matriz, 0, matriz.getFilas(), 0, matriz.getColumnas());
+        return pool.invoke(task);  // Ejecutar la búsqueda en el ForkJoinPool
     }
 }
